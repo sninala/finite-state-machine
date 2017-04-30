@@ -10,8 +10,8 @@ class FSM {
 		this.config = config;
 		this.states = this.config.states;
 		this.activeStateName = config.initial;
-		this.prevStates = [];
-		this.nextStates = [];
+		this.previousState = config.initial;
+		this.nextState = config.initial;
 	}
 
 	/**
@@ -30,9 +30,8 @@ class FSM {
 		if (!this.states[state]){
 			throw Error('State doesn\'t exist');
 		}
-		this.prevStates.push(this.activeStateName);
 		this.activeStateName = state;
-		this.nextStates = [];
+        this.nextState = state;
 	}
 
 	/**
@@ -46,6 +45,7 @@ class FSM {
 		if (!newStateName){
 			throw Error('Event doesn\'t exist');
 		}
+        this.previousState = this.activeStateName;
 		this.changeState(newStateName);
 	}
 
@@ -84,16 +84,13 @@ class FSM {
 	 * @returns {Boolean}
 	 */
 	undo() {
-		var result = false,
-			state;
-		
-		if (this.prevStates.length) {
-			state = this.prevStates.pop();
-			this.activeStateName = state;
-			this.nextStates.push(state);
+		var result;
+		if((this.activeStateName === this.config.initial && this.previousState == this.activeStateName) || !this.previousState){
+			result = false;
+		} else{
+			this.activeStateName = this.previousState;
 			result = true;
 		}
-		
 		return result;
 	}
 
@@ -103,23 +100,23 @@ class FSM {
 	 * @returns {Boolean}
 	 */
 	redo() {
-		var result = false,
-			state;
-		
-		if (this.nextStates.length) {
-			state = this.nextStates.pop();
-			this.activeStateName = state;
-			this.prevStates.push(state);
-			result = true;
-		}
-		
-		return result;
+	    var result = false;
+	    if ((this.activeStateName === this.config.initial && this.nextState == this.activeStateName) ||
+	        this.nextState == this.activeStateName || !this.nextState) {
+	        result = false;
+	    } else {
+	        this.activeStateName = this.nextState;
+	        result = true;
+	    }
+	    return result;
 	}
-
 	/**
 	 * Clears transition history
 	 */
-	clearHistory() {}
+	clearHistory() {
+        this.previousState = null;
+		this.nextState = null;
+    }
 }
 
 module.exports = FSM;
